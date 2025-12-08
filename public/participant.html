@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blind Typing Test - Participant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .registration {
+            text-align: center;
+        }
+
+        .registration input {
+            padding: 15px 25px;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 15px;
+        }
+
+        .registration button {
+            padding: 15px 40px;
+            font-size: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .registration button:hover {
+            transform: scale(1.05);
+        }
+
+        .waiting {
+            text-align: center;
+            padding: 50px;
+        }
+
+        .waiting .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .timer {
+            font-size: 48px;
+            font-weight: bold;
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .timer.warning {
+            color: #f39c12;
+        }
+
+        .timer.danger {
+            color: #e74c3c;
+            animation: pulse 0.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .paragraph-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 5px solid #667eea;
+            /* Prevent copying/selecting */
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+
+        .paragraph-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .paragraph-text {
+            font-size: 18px;
+            line-height: 1.8;
+            color: #444;
+            font-family: 'Courier New', monospace;
+        }
+
+        .typing-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        /* BLIND INPUT - Cannot see what is typed */
+        .blind-input {
+            width: 100%;
+            height: 150px;
+            padding: 20px;
+            font-size: 18px;
+            border: 3px solid #667eea;
+            border-radius: 10px;
+            resize: none;
+            background: #1a1a2e;
+            color: transparent !important;
+            caret-color: #667eea;
+            text-shadow: none !important;
+            -webkit-text-fill-color: transparent !important;
+        }
+
+        .blind-input::selection {
+            background: transparent !important;
+            color: transparent !important;
+        }
+
+        .blind-input::-moz-selection {
+            background: transparent !important;
+            color: transparent !important;
+        }
+
+        .blind-input:focus {
+            outline: none;
+            border-color: #764ba2;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .blind-input::placeholder {
+            color: rgba(255,255,255,0.3);
+            -webkit-text-fill-color: rgba(255,255,255,0.3) !important;
+        }
+
+        .char-count {
+            text-align: right;
+            color: #888;
+            margin-top: 10px;
+        }
+
+        .result-card {
+            text-align: center;
+        }
+
+        .result-card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .result-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-box .value {
+            font-size: 36px;
+            font-weight: bold;
+        }
+
+        .stat-box .label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .btn-retry {
+            margin-top: 20px;
+            padding: 15px 40px;
+            font-size: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .submitted-msg {
+            background: #d4edda;
+            color: #155724;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Blind Typing Test</h1>
+
+        <!-- Registration Section -->
+        <div class="card registration" id="registrationSection">
+            <h2>Enter Your Name</h2>
+            <p style="margin: 15px 0; color: #666;">Register to participate in the typing test</p>
+            <input type="text" id="participantName" placeholder="Your Name" maxlength="50">
+            <br>
+            <button onclick="register()">Register</button>
+        </div>
+
+        <!-- Waiting Section -->
+        <div class="card waiting hidden" id="waitingSection">
+            <div class="spinner"></div>
+            <h2>Waiting for Admin to Start Test...</h2>
+            <p style="color: #666; margin-top: 15px;">Hello, <span id="welcomeName"></span>! Please wait.</p>
+        </div>
+
+        <!-- Test Section -->
+        <div class="card hidden" id="testSection">
+            <div class="timer" id="timer">00:00</div>
+            
+            <div class="paragraph-section" id="paragraphSection" oncontextmenu="return false;" oncopy="return false;" oncut="return false;">
+                <h3>📖 Type this paragraph:</h3>
+                <div class="paragraph-text" id="paragraphText"></div>
+            </div>
+
+            <div class="typing-section">
+                <h3>⌨️ Type here (your input is hidden):</h3>
+                <textarea 
+                    class="blind-input" 
+                    id="typingInput" 
+                    placeholder="Start typing... (text is hidden)"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                ></textarea>
+                <div class="char-count">Characters typed: <span id="charCount">0</span></div>
+            </div>
+        </div>
+
+        <!-- Submitted Section -->
+        <div class="card hidden" id="submittedSection">
+            <div class="submitted-msg">
+                ✅ Your test has been submitted! Results will be shown once the test ends.
+            </div>
+        </div>
+
+        <!-- Result Section -->
+        <div class="card result-card hidden" id="resultSection">
+            <h2>🏆 Your Results</h2>
+            <div class="result-stats">
+                <div class="stat-box">
+                    <div class="value" id="resultWpm">0</div>
+                    <div class="label">Words Per Minute</div>
+                </div>
+                <div class="stat-box">
+                    <div class="value" id="resultAccuracy">0%</div>
+                    <div class="label">Accuracy</div>
+                </div>
+                <div class="stat-box">
+                    <div class="value" id="resultCpm">0</div>
+                    <div class="label">Characters Per Minute</div>
+                </div>
+                <div class="stat-box">
+                    <div class="value" id="resultScore">0</div>
+                    <div class="label">Final Score</div>
+                </div>
+            </div>
+            <button class="btn-retry" onclick="location.reload()">Take Another Test</button>
+        </div>
+    </div>
+
+    <script>
+        let participantName = '';
+        let testStartTime = null;
+        let timerInterval = null;
+        let timeLimit = 60;
+        let hasSubmitted = false;
+        let lastTestState = null;
+
+        // Register participant
+        function register() {
+            const name = document.getElementById('participantName').value.trim();
+            if (!name) {
+                alert('Please enter your name');
+                return;
+            }
+            participantName = name;
+            document.getElementById('welcomeName').textContent = name;
+            document.getElementById('registrationSection').classList.add('hidden');
+            document.getElementById('waitingSection').classList.remove('hidden');
+            
+            // Start polling for test state
+            pollTestState();
+        }
+
+        // Poll for test state
+        async function pollTestState() {
+            try {
+                const response = await fetch('/api/test/state');
+                const state = await response.json();
+
+                if (state.isActive && state.paragraph) {
+                    if (!lastTestState || !lastTestState.isActive) {
+                        // Test just started
+                        startTest(state);
+                    }
+                } else if (!state.isActive && lastTestState && lastTestState.isActive) {
+                    // Test just ended
+                    if (!hasSubmitted) {
+                        submitTest();
+                    }
+                }
+                
+                lastTestState = state;
+            } catch (error) {
+                console.error('Error polling test state:', error);
+            }
+
+            // Continue polling
+            setTimeout(pollTestState, 1000);
+        }
+
+        // Start the test
+        function startTest(state) {
+            if (hasSubmitted) return;
+            
+            document.getElementById('waitingSection').classList.add('hidden');
+            document.getElementById('testSection').classList.remove('hidden');
+            document.getElementById('paragraphText').textContent = state.paragraph;
+            document.getElementById('typingInput').value = '';
+            document.getElementById('typingInput').focus();
+            
+            timeLimit = state.timeLimit;
+            testStartTime = Date.now();
+            
+            // Calculate remaining time based on server start time
+            const elapsed = Math.floor((Date.now() - state.startTime) / 1000);
+            let remainingTime = timeLimit - elapsed;
+            
+            updateTimer(remainingTime);
+            
+            timerInterval = setInterval(() => {
+                remainingTime--;
+                updateTimer(remainingTime);
+                
+                if (remainingTime <= 0) {
+                    clearInterval(timerInterval);
+                    submitTest();
+                }
+            }, 1000);
+        }
+
+        // Update timer display
+        function updateTimer(seconds) {
+            const timerEl = document.getElementById('timer');
+            const mins = Math.floor(Math.max(0, seconds) / 60);
+            const secs = Math.max(0, seconds) % 60;
+            timerEl.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            
+            timerEl.classList.remove('warning', 'danger');
+            if (seconds <= 10) {
+                timerEl.classList.add('danger');
+            } else if (seconds <= 30) {
+                timerEl.classList.add('warning');
+            }
+        }
+
+        // Submit test
+        async function submitTest() {
+            if (hasSubmitted) return;
+            hasSubmitted = true;
+            
+            clearInterval(timerInterval);
+            
+            const typedText = document.getElementById('typingInput').value;
+            const timeTaken = Math.min((Date.now() - testStartTime) / 1000, timeLimit);
+            
+            document.getElementById('testSection').classList.add('hidden');
+            document.getElementById('submittedSection').classList.remove('hidden');
+            
+            try {
+                const response = await fetch('/api/results', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        participantName,
+                        typedText,
+                        timeTaken
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResults(data.result);
+                }
+            } catch (error) {
+                console.error('Error submitting test:', error);
+                alert('Error submitting test. Please contact the admin.');
+            }
+        }
+
+        // Show results
+        function showResults(result) {
+            document.getElementById('submittedSection').classList.add('hidden');
+            document.getElementById('resultSection').classList.remove('hidden');
+            
+            document.getElementById('resultWpm').textContent = result.wpm;
+            document.getElementById('resultAccuracy').textContent = result.accuracy.toFixed(1) + '%';
+            document.getElementById('resultCpm').textContent = result.cpm;
+            document.getElementById('resultScore').textContent = result.finalScore;
+        }
+
+        // Character count
+        document.getElementById('typingInput').addEventListener('input', function() {
+            document.getElementById('charCount').textContent = this.value.length;
+        });
+
+        // Prevent paste
+        document.getElementById('typingInput').addEventListener('paste', function(e) {
+            e.preventDefault();
+        });
+
+        // Enter key to register
+        document.getElementById('participantName').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') register();
+        });
+    </script>
+</body>
+</html>
