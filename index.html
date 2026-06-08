@@ -2313,6 +2313,12 @@ Write 2 sentences of personalised feedback and one specific actionable tip.`;
             
             animate();
         })();
+
+        // Open the admin view directly when routed through /admin on Vercel.
+        (function() {
+            const initialView = window.location.pathname === '/admin' ? 'admin' : 'participant';
+            showView(initialView);
+        })();
     </script>
 </body>
 </html>
