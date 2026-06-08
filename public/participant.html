@@ -316,6 +316,14 @@
                     <div class="label">Final Score</div>
                 </div>
             </div>
+
+            <!-- AI Coach Feedback -->
+            <div id="aiFeedbackBox" style="display:none; margin-top:24px; padding:20px; background:linear-gradient(135deg,rgba(102,126,234,0.1),rgba(118,75,162,0.1)); border:1px solid rgba(102,126,234,0.3); border-radius:12px;">
+                <p style="font-size:12px; color:#667eea; font-weight:700; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em;">✨ AI Coach Feedback</p>
+                <p id="aiFeedbackText" style="color:#333; line-height:1.7; font-size:15px;"></p>
+                <p id="aiFeedbackModel" style="font-size:11px; color:#999; margin-top:8px;"></p>
+            </div>
+
             <button class="btn-retry" onclick="location.reload()">Take Another Test</button>
         </div>
     </div>
@@ -460,6 +468,45 @@
             document.getElementById('resultAccuracy').textContent = result.accuracy.toFixed(1) + '%';
             document.getElementById('resultCpm').textContent = result.cpm;
             document.getElementById('resultScore').textContent = result.finalScore;
+
+            // Fetch personalised AI coaching feedback — non-blocking
+            fetchAIFeedback(result);
+        }
+
+        // AI Coach Feedback — calls the server-side proxy to keep the key secure
+        async function fetchAIFeedback(result) {
+            const box   = document.getElementById('aiFeedbackBox');
+            const text  = document.getElementById('aiFeedbackText');
+            const model = document.getElementById('aiFeedbackModel');
+            if (!box) return;
+
+            box.style.display = 'block';
+            text.textContent  = '✨ Generating personalised feedback...';
+            model.textContent = '';
+
+            try {
+                const res = await fetch('/api/ai-feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        participantName: result.participantName || participantName,
+                        wpm:             result.wpm,
+                        accuracy:        result.accuracy,
+                        finalScore:      result.finalScore,
+                        difficulty:      'medium'
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    text.textContent  = data.feedback;
+                    model.textContent = data.model ? 'Powered by ' + data.model : '';
+                } else {
+                    text.textContent = 'Could not load feedback right now.';
+                }
+            } catch (err) {
+                text.textContent = 'Could not load feedback right now.';
+                console.warn('[AI Feedback]', err);
+            }
         }
 
         // Character count

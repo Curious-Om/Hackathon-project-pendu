@@ -1,167 +1,191 @@
-# Blind Typing Test – Hackathon Project
+# Blind Typing Test
 
-A small but complete web app for running a **blind typing competition** with separate **Participant** and **Admin** views, real‑time tracking, and AI‑generated paragraphs.
+A real-time blind typing competition platform built at a college hackathon in ~2 hours, then refined post-event with production-grade AI integration.
 
----
-
-## 1. Tech Stack
-
-- **Frontend:** Pure `HTML`, `CSS`, `JavaScript` (no frameworks)
-- **Storage:** Browser `localStorage` for paragraphs, results, and test state
-- **AI:** Google Gemini API (`gemini-2.0-flash-lite`) via `fetch`
-- **Deployment:** Single‑page app (`index.html`) – runs on any static server
-
-Files:
-- `index.html` – full app (UI + logic)
-- `server.js`, `package.json` – optional small Node server if you want to run via `npm start`
+> **Hackathon context:** Built solo in a 2-hour window. The core mechanic (blind input, admin/participant split, heartbeat tracking, localStorage sync) was all shipped in that window. Post-event I secured the AI layer, added a server-side proxy, built a model fallback chain, and added AI-powered post-test feedback.
 
 ---
 
-## 2. How to Run
+## What it does
 
-### Option A – Easiest (open directly)
+Participants register, wait for the admin to start a test, then type a given paragraph with their input hidden — no visual feedback while typing. The admin controls the test lifecycle, manages paragraphs, and can generate new ones on demand using AI. After each test, participants receive personalised AI coaching feedback based on their WPM, accuracy, and final score.
 
-1. Locate `index.html`.
-2. Double‑click to open it in a modern browser (Chrome recommended).
-3. App is fully client‑side, so it works directly from the file system.
+---
 
-> Use this in the lab: copy the folder to each machine and open `index.html`.
+## Tech Stack
 
-### Option B – Run with Node.js (optional)
+| Layer | Choice |
+|-------|--------|
+| Frontend | Pure HTML + CSS + JavaScript (no framework) |
+| Backend | Node.js + Express |
+| AI | OpenRouter API (free tier) — `liquid/lfm-2.5-1.2b-instruct` with fallbacks |
+| Storage | `localStorage` (standalone mode) / `data.json` (server mode) |
+| Security | `.env` for secrets, server-side AI proxy, rate limiting, input sanitisation |
 
-If you want a local server:
+---
 
-1. Install Node.js (if not already installed).
-2. In this project folder, run:
+## How to Run
 
-```powershell
+```bash
 npm install
 npm start
+# Participant: http://localhost:3000
+# Admin:       http://localhost:3000/admin
 ```
 
-3. Open the shown URL in your browser (usually `http://localhost:3000`).
+Or just open `index.html` directly in a browser — it works fully client-side (uses localStorage + calls OpenRouter directly).
+
+Admin login: `admin` / `admin123`
 
 ---
 
-## 3. Roles & Flows
+## Deploy to Vercel (Live Hosting)
 
-### Participant View
+The project is pre-configured for Vercel with serverless functions in `api/`.
 
-1. Click **“Participant”** in the top navigation (default view).
-2. **Register:**
-   - Enter your name.
-   - Read the **Competition Rules** below the form.
-   - Click **Register**.
-3. **Waiting Screen:**
-   - See your name and “Waiting for Admin to Start Test…”.
-   - Review quick reminders.
-   - A **Caps Lock warning badge** will appear if Caps Lock is ON.
-4. **During Test:**
-   - When admin starts a test, the typing screen appears automatically.
-   - Top shows a **countdown timer**.
-   - Paragraph is visible; your input box is a **blind input**:
-     - Typed text is hidden.
-     - Copy/paste and right‑click are disabled.
-   - A character counter shows how many characters you typed.
-5. **Submission & Results:**
-   - Test auto‑submits when time runs out or when you finish early.
-   - Results screen shows:
-     - WPM (words per minute)
-     - CPM (characters per minute)
-     - Accuracy %
-     - Final score (accuracy + speed)
-   - Click **“Take Another Test”** to go back to waiting for the next round.
+**1. Push to GitHub**
+```bash
+git add .
+git commit -m "ready for vercel deployment"
+git push
+```
 
-### Admin View
+**2. Import on Vercel**
+- Go to [vercel.com](https://vercel.com) → New Project → Import your GitHub repo
+- Vercel auto-detects the `api/` folder and `vercel.json`
+- No build settings needed — leave everything default
 
-1. Click **“Admin”** in the top navigation.
-2. Log in with default credentials:
-   - Username: `admin`
-   - Password: `admin123`
-3. Admin Dashboard has three main sections:
+**3. Add Environment Variables**
+In your Vercel project → Settings → Environment Variables, add:
 
-#### a) Logged‑In Participants
+| Name | Value |
+|------|-------|
+| `OPENROUTER_API_KEY` | your OpenRouter key |
+| `ADMIN_USERNAME` | `admin` |
+| `ADMIN_PASSWORD` | your chosen password |
 
-- Shows all active participants with:
-  - Name
-  - A small status dot and “time since login” (e.g., `30s ago`).
-- Uses a **heartbeat system**:
-  - Each participant sends a heartbeat every 2 seconds.
-  - Inactive participants (no heartbeat > 15 seconds) are automatically removed.
+**4. Deploy**
+Click Deploy. Your live URLs will be:
+- Participant: `https://your-project.vercel.app`
+- Admin: `https://your-project.vercel.app/admin`
 
-#### b) Test Control
-
-- **Select Paragraph** from the dropdown.
-- Set **Time Limit (seconds)** (between 10 and 600).
-- Use buttons:
-  - **Start Test** – Launches the test for all waiting participants.
-  - **Stop Test** – Force‑stops the test.
-- Status bar shows whether the test is **active** or **not active**.
-
-#### c) Paragraph Management + AI Generation
-
-- Scroll down to “Paragraph Management”.
-- Features:
-  - **Paragraph List** – shows current paragraphs with:
-    - `Edit` button: opens a modal to change text.
-    - `Del` button: deletes the paragraph.
-  - **Add Paragraph** – textarea + button to add manually.
-
-##### AI Paragraph Generation
-
-- “✨ Generate with AI” section:
-  - Topic input, e.g., “technology”, “sports”, “nature”.
-  - Toggles:
-    - **Include Punctuation** (on by default)
-    - **Include Numbers**
-  - Click **“🤖 Generate Paragraph”**:
-    - Sends a prompt to the **Gemini API**.
-    - Shows loading spinner while generating.
-    - Automatically adds the new paragraph to the paragraph list.
-- If the API key quota is exceeded, you’ll see a clear error popup.
+> **State note:** The serverless functions use in-memory state which resets on cold starts (~5 min of inactivity). For a live typing competition session this is fine — start the server, run your rounds, done. If you need persistence across restarts, swap `api/_store.js` for Vercel KV.
 
 ---
 
-## 4. Scoring Logic
+## AI Design Decisions
 
-- Raw metrics:
-  - `charsTyped` – total characters typed.
-  - Raw WPM and CPM computed from `charsTyped` and elapsed time.
-- Accuracy:
-  - Compares typed text with the original paragraph.
-- **Adjusted WPM:**  
-  `finalWpm = rawWpm × (accuracy / 100)`
-- Final Score:
-  - Combines **60% accuracy** + **40% speed score** (speed capped for fairness).
+This section explains the engineering choices behind the AI integration — the parts worth talking about in an interview.
+
+### 1. Server-side API key proxy
+
+The OpenRouter key lives in `.env` and never reaches the browser. The server exposes two endpoints — `/api/generate-paragraph` and `/api/ai-feedback` — which the client calls. This is the correct pattern for any production AI integration.
+
+For the standalone `index.html` (no server), the key is embedded directly — acceptable for a free-tier hackathon key, but the README documents this as a known tradeoff.
+
+### 2. Model fallback chain
+
+Free-tier models get rate-limited (HTTP 429) under load, and some reasoning-only models return `content: null` when they exhaust their token budget on internal reasoning. Rather than hardcoding one model and hoping it's up, both the server and client maintain an ordered list:
+
+```
+liquid/lfm-2.5-1.2b-instruct:free   ← primary (confirmed non-reasoning, content always populated)
+meta-llama/llama-3.3-70b-instruct:free
+google/gemma-4-31b-it:free
+meta-llama/llama-3.2-3b-instruct:free
+```
+
+Each model is tried in order. If it returns 4xx/5xx or empty content, the next is tried automatically. This was debugged live — the `openrouter/free` auto-router was picking a reasoning model whose output went to `reasoning` not `content`, causing silent failures.
+
+### 3. System + user prompt split
+
+Earlier versions used a single-turn prompt. The current implementation separates concerns:
+
+- **System prompt** defines the output contract (plain text only, 50–80 words, factually accurate)
+- **User prompt** encodes the specific request (topic, difficulty tier, punctuation/number options)
+- A **few-shot example** is appended to the user prompt to anchor the output format
+
+This reduces hallucinations like markdown headers, quoted text, and length violations.
+
+### 4. Difficulty-aware prompt tiers
+
+Three tiers map to reading-level instructions:
+
+| Tier | Instruction |
+|------|-------------|
+| Easy | Grade 4–5 level, short sentences, no jargon |
+| Medium | Grade 7–8 level, mixed sentence length |
+| Hard | Grade 11+ level, complex sentences, precise terminology |
+
+### 5. Prompt injection sanitisation
+
+The topic input from the admin is sanitised before being injected into the prompt — backticks, quotes, and backslashes are stripped (`topic.replace(/['"\\`]/g, '')`). This prevents an admin from injecting instructions that override the system prompt.
+
+### 6. AI post-test feedback
+
+After a test ends, the participant's WPM, accuracy, and final score are sent to the AI with a coaching system prompt and benchmark context. The AI returns 2 sentences of personalised feedback. This is the key example of AI being applied to the app's own data rather than just generating content.
 
 ---
 
-## 5. Design & UX Highlights
+## Scoring Logic
 
-- Modern **glassmorphism** design:
-  - Blurred cards, gradient backgrounds, soft shadows.
-- **Dark & Light themes**:
-  - Theme toggle button at top‑right.
-  - Theme choice saved in `localStorage`.
-- **Accessibility & UX touches**:
-  - Focus outlines, reduced motion friendly.
-  - Clear error/success alerts.
-  - Caps Lock indicator on waiting and test screens.
-  - Competition rules visible before and during the test.
+```
+accuracy     = correctChars / paragraph.length × 100
+adjustedWpm  = rawWpm × (accuracy / 100)
+speedScore   = min(adjustedWpm / 100, 1) × 100
+finalScore   = accuracy × 0.6 + speedScore × 0.4
+```
+
+Speed is capped at 100 WPM equivalent to prevent speed-only strategies from dominating. Accuracy weighs 60% of the final score.
 
 ---
 
-## 6. Configuration Notes
+## Features
 
-- **AI Key:**  
-  - Gemini API key is embedded in `index.html` for hackathon/demo use.
-  - For production, move it server‑side or use a proxy to protect the key.
-- **Admin Credentials:**  
-  - Default: `admin / admin123`  
-  - Can be changed in the JavaScript `DEFAULT_DATA.admin` section.
+**Participant**
+- Register by name, wait for admin to start
+- Blind textarea — typed text hidden, paste disabled, right-click blocked
+- Caps Lock warning indicator
+- Countdown timer with colour-coded urgency (yellow at 30s, red + pulse at 10s)
+- Auto-submit on timer expiry
+- Results screen with WPM, CPM, accuracy, final score
+- AI coaching feedback after every test
+
+**Admin**
+- Login (credentials in `.env`)
+- Live participant list with heartbeat tracking — inactive users auto-removed after 15s
+- Test control: select paragraph, set time limit, start/stop
+- Paragraph management: add, edit, delete
+- AI paragraph generation with topic, difficulty (Easy/Medium/Hard), punctuation toggle, numbers toggle
+- Preview-before-save — admin reviews generated paragraph before it enters the pool
+- Model badge on each AI-generated paragraph showing which model produced it
+- Results dashboard with full leaderboard
+
+**Infrastructure**
+- Rate limiting on AI endpoints (10 req/min per IP)
+- Input validation on all API routes
+- `.gitignore` excludes `.env` and `data.json`
 
 ---
 
-## 7. Pitch Summary (for judges)
+## Project Structure
 
-> “This is a fully client‑side blind typing competition app built with pure HTML, CSS and JavaScript. It uses `localStorage` to persist participants, paragraphs, and results, plus a heartbeat and polling system to track active users in real time without a backend. The admin can manage tests, see logged‑in participants, and generate new practice paragraphs on the fly using the Gemini API, with options for punctuation and numbers. The interface uses a modern glassmorphism design with dark/light themes, Caps Lock detection, and clear competition rules to provide a polished, hackathon‑ready experience.”
+```
+blind-typing-test/
+├── index.html          # Standalone single-file app (localStorage, direct OpenRouter calls)
+├── server.js           # Express server with API routes and server-side AI proxy
+├── public/
+│   ├── participant.html  # Participant view (server-backed)
+│   └── admin.html        # Admin dashboard (server-backed)
+├── .env                # API key and admin credentials (not committed)
+├── .gitignore
+└── package.json
+```
+
+---
+
+## Security Notes
+
+- API key in `.env`, never in client code for the server version
+- `data.json` excluded from git (runtime state, may contain participant names)
+- Admin credentials configurable via `.env`
+- All user input validated and sanitised server-side before use

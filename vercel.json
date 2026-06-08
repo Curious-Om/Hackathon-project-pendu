@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "buildCommand": "",
+  "outputDirectory": "public",
+  "rewrites": [
+    { "source": "/api/admin/login",          "destination": "/api/admin/login" },
+    { "source": "/api/paragraphs",           "destination": "/api/paragraphs" },
+    { "source": "/api/test/state",           "destination": "/api/test/state" },
+    { "source": "/api/test/start",           "destination": "/api/test/start" },
+    { "source": "/api/test/stop",            "destination": "/api/test/stop" },
+    { "source": "/api/results",              "destination": "/api/results" },
+    { "source": "/api/generate-paragraph",  "destination": "/api/generate-paragraph" },
+    { "source": "/api/ai-feedback",         "destination": "/api/ai-feedback" },
+    { "source": "/admin",                   "destination": "/admin.html" },
+    { "source": "/",                        "destination": "/participant.html" }
+  ]
+}

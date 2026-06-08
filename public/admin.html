@@ -530,7 +530,10 @@
                 // Update paragraph list
                 const listHtml = paragraphs.map(p => `
                     <div class="paragraph-item">
-                        <div class="text">${escapeHtml(p.text.substring(0, 100))}${p.text.length > 100 ? '...' : ''}</div>
+                        <div class="text">
+                            ${escapeHtml(p.text.substring(0, 100))}${p.text.length > 100 ? '...' : ''}
+                            ${p.aiModel ? `<br><span style="font-size:11px;color:#4ecca3;font-weight:600;">🤖 ${escapeHtml(p.aiModel)}</span>` : ''}
+                        </div>
                         <div class="actions">
                             <button class="btn-edit" onclick="editParagraph(${p.id})">Edit</button>
                             <button class="btn-delete" onclick="deleteParagraph(${p.id})">Delete</button>
@@ -593,7 +596,7 @@
             if (!text || !editingId) return;
 
             try {
-                await fetch(`/api/paragraphs/${editingId}`, {
+                await fetch(`/api/paragraphs?id=${editingId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ text })
@@ -611,7 +614,7 @@
             if (!confirm('Are you sure you want to delete this paragraph?')) return;
 
             try {
-                await fetch(`/api/paragraphs/${id}`, { method: 'DELETE' });
+                await fetch(`/api/paragraphs?id=${id}`, { method: 'DELETE' });
                 loadParagraphs();
             } catch (error) {
                 console.error('Error deleting paragraph:', error);
